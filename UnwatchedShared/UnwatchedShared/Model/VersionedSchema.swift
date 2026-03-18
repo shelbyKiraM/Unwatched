@@ -185,29 +185,34 @@ public enum UnwatchedMigrationPlan: SchemaMigrationPlan {
             Log.info("Migration already done")
             return
         }
+        if SyncedSettingsStore.isLocalOnly {
+            Log.info("Local-only synced settings store enabled; skipping iCloud migration")
+            UserDefaults.standard.set(true, forKey: "v1p9toV1p10DidMigrate")
+            return
+        }
         if let value = UserDefaults.standard.value(forKey: Const.defaultShortsSetting) as? Int64 {
             Log.info("Migrate: defaultShortsSetting \(value)")
-            NSUbiquitousKeyValueStore.default.set(value, forKey: Const.defaultShortsSetting)
+            SyncedSettingsStore.set(value, forKey: Const.defaultShortsSetting)
             UserDefaults.standard.removeObject(forKey: Const.defaultShortsSetting)
         }
         if let value = UserDefaults.standard.value(forKey: Const.skipChapterText) as? String {
             Log.info("Migrate: skipChapterText \(value)")
-            NSUbiquitousKeyValueStore.default.set(value, forKey: Const.skipChapterText)
+            SyncedSettingsStore.set(value, forKey: Const.skipChapterText)
             UserDefaults.standard.removeObject(forKey: Const.skipChapterText)
         }
         if let value = UserDefaults.standard.value(forKey: Const.mergeSponsorBlockChapters) as? Bool {
             Log.info("Migrate: mergeSponsorBlockChapters \(value)")
-            NSUbiquitousKeyValueStore.default.set(value, forKey: Const.mergeSponsorBlockChapters)
+            SyncedSettingsStore.set(value, forKey: Const.mergeSponsorBlockChapters)
             UserDefaults.standard.removeObject(forKey: Const.mergeSponsorBlockChapters)
         }
         if let value = UserDefaults.standard.value(forKey: Const.youtubePremium) as? Bool {
             Log.info("Migrate: youtubePremium \(value)")
-            NSUbiquitousKeyValueStore.default.set(value, forKey: Const.youtubePremium)
+            SyncedSettingsStore.set(value, forKey: Const.youtubePremium)
             UserDefaults.standard.removeObject(forKey: Const.youtubePremium)
         }
         if let value = UserDefaults.standard.value(forKey: Const.skipSponsorSegments) as? Bool {
             Log.info("Migrate: skipSponsorSegments \(value)")
-            NSUbiquitousKeyValueStore.default.set(value, forKey: Const.skipSponsorSegments)
+            SyncedSettingsStore.set(value, forKey: Const.skipSponsorSegments)
             UserDefaults.standard.removeObject(forKey: Const.skipSponsorSegments)
         }
         UserDefaults.standard.set(true, forKey: "v1p9toV1p10DidMigrate")

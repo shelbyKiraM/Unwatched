@@ -18,7 +18,7 @@ extension UserDataService {
             }
         }
         for (key, _) in Const.syncedSettingsDefaults {
-            if let value = NSUbiquitousKeyValueStore.default.object(forKey: key) {
+            if let value = SyncedSettingsStore.object(forKey: key) {
                 result[key] = AnyCodable(value)
             } else {
                 Log.warning("Encoding sync settings key not set/found: \(key)")
@@ -34,7 +34,7 @@ extension UserDataService {
         resetDefaultSettingsIfNeeded()
         for (key, value) in settings {
             if Const.syncedSettingsDefaults.contains(where: { $0.key == key }) {
-                NSUbiquitousKeyValueStore.default.set(value.value, forKey: key)
+                SyncedSettingsStore.set(value.value, forKey: key)
             } else {
                 UserDefaults.standard.setValue(value.value, forKey: key)
             }
@@ -76,7 +76,7 @@ extension UserDataService {
         }
         // Check synced settings
         for (key, defaultValue) in Const.syncedSettingsDefaults {
-            if let currentValue = NSUbiquitousKeyValueStore.default.object(forKey: key) {
+            if let currentValue = SyncedSettingsStore.object(forKey: key) {
                 let currentAnyCodable = AnyCodable(currentValue)
                 let defaultAnyCodable = AnyCodable(defaultValue)
                 if currentAnyCodable != defaultAnyCodable {

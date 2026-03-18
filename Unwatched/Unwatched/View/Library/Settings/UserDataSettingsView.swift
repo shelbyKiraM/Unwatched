@@ -17,7 +17,6 @@ struct UserDataSettingsView: View {
     @State var fileToBeRestored: IdentifiableURL?
 
     @State var isDeletingEverythingTask: Task<(), Never>?
-    @State var hasicloudDirectory = true
     @State var isExporting = false
 
     var body: some View {
@@ -61,14 +60,13 @@ struct UserDataSettingsView: View {
                     }
                 }
 
-                MySection(footer: !hasicloudDirectory ? "noIcloudBackupWarning" : "") {
+                MySection(footer: LocalizedStringKey("Backups are stored locally on this device")) {
                     AsyncButton {
                         await saveBackupFile()
                     } label: {
                         Text("backupNow")
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .disabled(!hasicloudDirectory)
                 }
 
                 if !fileNames.isEmpty {
@@ -175,7 +173,7 @@ struct UserDataSettingsView: View {
             isDeletingEverythingTask = nil
         }
         .onAppear {
-            getAllIcloudFiles()
+            getAllBackupFiles()
         }
     }
 
@@ -189,7 +187,7 @@ struct UserDataSettingsView: View {
         do {
             try FileManager.default.removeItem(at: fileURL)
             fileNames.remove(atOffsets: offsets)
-            getAllIcloudFiles()
+            getAllBackupFiles()
         } catch {
             Log.error("deleteFile: \(error)")
         }
@@ -232,7 +230,7 @@ struct UserDataSettingsView: View {
         do {
             let task = UserDataService.saveToIcloud(manual: true)
             try await task.value
-            self.getAllIcloudFiles()
+            self.getAllBackupFiles()
         } catch {
             Log.error("\(error)")
         }
@@ -252,14 +250,12 @@ struct UserDataSettingsView: View {
         }
     }
 
-    func getAllIcloudFiles() {
+    func getAllBackupFiles() {
         let fileManager = FileManager.default
         guard let backupsUrl = UserDataService.getBackupsDirectory() else {
-            Log.warning("no documents url")
-            hasicloudDirectory = false
+            Log.warning("no backup directory")
             return
         }
-        hasicloudDirectory = true
         withAnimation {
             do {
                 let fileUrls = try fileManager

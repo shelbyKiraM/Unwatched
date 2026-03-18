@@ -16,33 +16,16 @@ import UnwatchedShared
     @ObservationIgnored var cancellables: Set<AnyCancellable> = []
 
     init() {
-        setupCloudKitListener()
+        isSyncing = false
     }
 
     func setupCloudKitListener() {
-        print("iCloud sync: Setting up sync notification")
-        NotificationCenter.default.publisher(for: NSPersistentCloudKitContainer.eventChangedNotification)
-            .sink { [weak self] notification in
-                guard let self else { return }
-
-                if let event = notification.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey]
-                    as? NSPersistentCloudKitContainer.Event {
-
-                    // print("iCloud sync: cancelled syncDoneTask")
-                    if event.endDate == nil {
-                        Task { @MainActor in
-                            self.isSyncing = true
-                        }
-                        // starting event
-                    }
-                }
-            }
-            .store(in: &cancellables)
+        isSyncing = false
     }
 
     func cancelCloudKitListener() {
-        print("iCloud sync: cancelling sync notification")
         cancellables.removeAll()
+        isSyncing = false
     }
 
 }

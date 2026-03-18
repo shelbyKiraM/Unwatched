@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import UnwatchedShared
 
 #if canImport(UIKit)
 import UIKit
@@ -16,34 +17,12 @@ import UIKit
 public final class CloudStorageSync: ObservableObject {
     public static let shared = CloudStorageSync()
 
-    private let ubiquitousKvs: NSUbiquitousKeyValueStore
     private var observers: [String: [KeyObserver]] = [:]
 
     @Published private(set) public var status: Status
 
     private init() {
-        ubiquitousKvs = NSUbiquitousKeyValueStore.default
         status = Status(date: Date(), source: .initial, keys: [])
-
-        NotificationCenter.default.addObserver(
-            forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self else { return }
-            MainActor.assumeIsolated {
-                self.didChangeExternally(notification: notification)
-            }
-        }
-        ubiquitousKvs.synchronize()
-
-        #if canImport(UIKit) && !os(watchOS)
-        NotificationCenter.default.addObserver(
-            ubiquitousKvs,
-            selector: #selector(NSUbiquitousKeyValueStore.synchronize),
-            name: UIApplication.willEnterForegroundNotification,
-            object: nil)
-        #endif
     }
 
     private func didChangeExternally(notification: Notification) {
@@ -100,134 +79,134 @@ public final class CloudStorageSync: ObservableObject {
     // By excessively calling .synchronize() all the time, changes are persisted to disk.
     // This way, when working with Xcode, changes aren't constantly being reverted.
     internal func synchronize() {
-        ubiquitousKvs.synchronize()
+        SyncedSettingsStore.synchronize()
     }
 }
 
 // Wrap calls to NSUbiquitousKeyValueStore
 extension CloudStorageSync {
     public func object(forKey key: String) -> Any? {
-        ubiquitousKvs.object(forKey: key)
+        SyncedSettingsStore.object(forKey: key)
     }
 
     public func set(_ object: Any?, for key: String) {
-        ubiquitousKvs.set(object, forKey: key)
+        SyncedSettingsStore.set(object, forKey: key)
+        status = Status(date: Date(), source: .localChange, keys: [key])
     }
 
     public func remove(for key: String) {
-        ubiquitousKvs.removeObject(forKey: key)
+        SyncedSettingsStore.removeObject(forKey: key)
     }
 
     public func string(for key: String) -> String? {
-        ubiquitousKvs.string(forKey: key)
+        SyncedSettingsStore.string(forKey: key)
     }
 
     public func url(for key: String) -> URL? {
-        ubiquitousKvs.string(forKey: key).flatMap(URL.init(string:))
+        SyncedSettingsStore.string(forKey: key).flatMap(URL.init(string:))
     }
 
     public func array(for key: String) -> [Any]? {
-        ubiquitousKvs.array(forKey: key)
+        SyncedSettingsStore.array(forKey: key)
     }
 
     public func dictionary(for key: String) -> [String: Any]? {
-        ubiquitousKvs.dictionary(forKey: key)
+        SyncedSettingsStore.dictionary(forKey: key)
     }
 
     public func date(for key: String) -> Date? {
-        guard let obj = ubiquitousKvs.object(forKey: key) else { return nil }
-        return obj as? Date
+        SyncedSettingsStore.date(forKey: key)
     }
 
     public func data(for key: String) -> Data? {
-        ubiquitousKvs.data(forKey: key)
+        SyncedSettingsStore.data(forKey: key)
     }
 
     public func int(for key: String) -> Int? {
-        if ubiquitousKvs.object(forKey: key) == nil { return nil }
-        return Int(ubiquitousKvs.longLong(forKey: key))
+        if SyncedSettingsStore.object(forKey: key) == nil { return nil }
+        return Int(SyncedSettingsStore.longLong(forKey: key))
     }
 
     public func int64(for key: String) -> Int64? {
-        if ubiquitousKvs.object(forKey: key) == nil { return nil }
-        return ubiquitousKvs.longLong(forKey: key)
+        if SyncedSettingsStore.object(forKey: key) == nil { return nil }
+        return SyncedSettingsStore.longLong(forKey: key)
     }
 
     public func double(for key: String) -> Double? {
-        if ubiquitousKvs.object(forKey: key) == nil { return nil }
-        return ubiquitousKvs.double(forKey: key)
+        if SyncedSettingsStore.object(forKey: key) == nil { return nil }
+        return SyncedSettingsStore.double(forKey: key)
     }
 
     public func bool(for key: String) -> Bool? {
-        if ubiquitousKvs.object(forKey: key) == nil { return nil }
-        return ubiquitousKvs.bool(forKey: key)
+        if SyncedSettingsStore.object(forKey: key) == nil { return nil }
+        return SyncedSettingsStore.bool(forKey: key)
     }
 
     public func rawRepresentable<R>(for key: String) -> R? where R: RawRepresentable, R.RawValue == String {
-        guard let str = ubiquitousKvs.string(forKey: key) else { return nil }
+        guard let str = SyncedSettingsStore.string(forKey: key) else { return nil }
         return R(rawValue: str)
     }
 
     public func rawRepresentable<R>(for key: String) -> R? where R: RawRepresentable, R.RawValue == Int {
-        if ubiquitousKvs.object(forKey: key) == nil { return nil }
-        let int = Int(ubiquitousKvs.longLong(forKey: key))
+        if SyncedSettingsStore.object(forKey: key) == nil { return nil }
+        let int = Int(SyncedSettingsStore.longLong(forKey: key))
         return R(rawValue: int)
     }
 
     //
 
     public func set(_ value: String?, for key: String) {
-        ubiquitousKvs.set(value, forKey: key)
+        SyncedSettingsStore.set(value, forKey: key)
         status = Status(date: Date(), source: .localChange, keys: [key])
     }
 
     public func set(_ value: URL?, for key: String) {
-        ubiquitousKvs.set(value?.absoluteString, forKey: key)
+        SyncedSettingsStore.set(value?.absoluteString, forKey: key)
         status = Status(date: Date(), source: .localChange, keys: [key])
     }
 
     public func set(_ value: Data?, for key: String) {
-        ubiquitousKvs.set(value, forKey: key)
+        SyncedSettingsStore.set(value, forKey: key)
         status = Status(date: Date(), source: .localChange, keys: [key])
     }
 
     public func set(_ value: [Any]?, for key: String) {
-        ubiquitousKvs.set(value, forKey: key)
+        SyncedSettingsStore.set(value, forKey: key)
         status = Status(date: Date(), source: .localChange, keys: [key])
     }
 
     public func set(_ value: [String: Any]?, for key: String) {
-        ubiquitousKvs.set(value, forKey: key)
+        SyncedSettingsStore.set(value, forKey: key)
         status = Status(date: Date(), source: .localChange, keys: [key])
     }
 
     public func set(_ value: Int?, for key: String) {
-        ubiquitousKvs.set(value, forKey: key)
+        SyncedSettingsStore.set(value, forKey: key)
         status = Status(date: Date(), source: .localChange, keys: [key])
     }
 
     public func set(_ value: Int64?, for key: String) {
-        ubiquitousKvs.set(value, forKey: key)
+        SyncedSettingsStore.set(value, forKey: key)
         status = Status(date: Date(), source: .localChange, keys: [key])
     }
 
     public func set(_ value: Double?, for key: String) {
-        ubiquitousKvs.set(value, forKey: key)
+        SyncedSettingsStore.set(value, forKey: key)
         status = Status(date: Date(), source: .localChange, keys: [key])
     }
 
     public func set(_ value: Bool?, for key: String) {
-        ubiquitousKvs.set(value, forKey: key)
+        SyncedSettingsStore.set(value, forKey: key)
         status = Status(date: Date(), source: .localChange, keys: [key])
     }
 
     public func set<R>(_ value: R?, for key: String) where R: RawRepresentable, R.RawValue == String {
-        ubiquitousKvs.set(value?.rawValue, forKey: key)
+        SyncedSettingsStore.set(value?.rawValue, forKey: key)
         status = Status(date: Date(), source: .localChange, keys: [key])
     }
 
     public func set<R>(_ value: R?, for key: String) where R: RawRepresentable, R.RawValue == Int {
-        ubiquitousKvs.set(value?.rawValue, forKey: key)
+        SyncedSettingsStore.set(value?.rawValue, forKey: key)
         status = Status(date: Date(), source: .localChange, keys: [key])
     }
 }

@@ -74,7 +74,7 @@ actor RefreshActor {
     private let refreshActor = RefreshActor()
 
     init() {
-        setupCloudKitListener()
+        UserDefaults.standard.set(false, forKey: Const.enableIcloudSync)
     }
 
     func refreshAll(hardRefresh: Bool = false) async {
@@ -156,57 +156,20 @@ actor RefreshActor {
     }
 
     func stopSyncIndicatorIfNoNetwork() async {
-        if await !isNetworkConnected() {
-            // workaround: sync event could be long, but they also happen offline
-            // this stops the sync indicator only when there's no connection
-            self.isSyncingIcloud = false
-        }
+        self.isSyncingIcloud = false
     }
 
     func handleBecameActive() async {
-        if cancellables.isEmpty {
-            setupCloudKitListener()
-        }
-        Log.info("iCloud sync: refreshOnStartup started")
-        let enableIcloudSync = UserDefaults.standard.bool(forKey: Const.enableIcloudSync)
-        let autoRefreshIgnoresSync = UserDefaults.standard.bool(forKey: Const.autoRefreshIgnoresSync)
+        Log.info("handleBecameActive: local-only mode")
         if Const.requiresDurationFetch.bool ?? false {
             VideoService.fetchVideoDurationsQueueInbox()
             UserDefaults.standard.set(false, forKey: Const.requiresDurationFetch)
         }
 
-        if enableIcloudSync {
-            let networkTimeout: CGFloat = 3
-            if autoRefreshIgnoresSync {
-                autoRefreshTask = Task {
-                    await executeAutoRefresh()
-                }
-                do {
-                    try await Task.sleep(s: networkTimeout)
-                    await stopSyncIndicatorIfNoNetwork()
-                } catch { }
-                return
-            }
-
-            syncDoneTask?.cancel()
-            syncDoneTask = Task {
-                do {
-                    // timeout in case CloudKit sync doesn't start
-                    try await Task.sleep(s: networkTimeout)
-                    autoRefreshTask?.cancel()
-                    autoRefreshTask = Task { @MainActor in
-                        await stopSyncIndicatorIfNoNetwork()
-                        await executeAutoRefresh()
-                    }
-                } catch {
-                    Log.info("error: \(error)")
-                }
-            }
-        } else {
-            cancelCloudKitListener()
-            autoRefreshTask = Task {
-                await executeAutoRefresh()
-            }
+        cancelCloudKitListener()
+        autoRefreshTask?.cancel()
+        autoRefreshTask = Task {
+            await executeAutoRefresh()
         }
     }
 
@@ -215,6 +178,7 @@ actor RefreshActor {
         cancelCloudKitListener()
         syncDoneTask?.cancel()
         autoRefreshTask?.cancel()
+        isSyncingIcloud = false
     }
 
     func isNetworkConnected() async -> Bool {

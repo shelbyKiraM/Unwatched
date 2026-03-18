@@ -35,7 +35,8 @@ public struct CloudStorage<Value>: DynamicProperty {
         storage storageKeyPath: ReferenceWritableKeyPath<OuterSelf, Self>
     ) -> Value {
         get {
-            instance[keyPath: storageKeyPath].object.keyObserver.enclosingObjectWillChange = instance.objectWillChange as? ObservableObjectPublisher
+            instance[keyPath: storageKeyPath].object.keyObserver.enclosingObjectWillChange =
+                instance.objectWillChange as? ObservableObjectPublisher
             return instance[keyPath: storageKeyPath].wrappedValue
         }
         set {

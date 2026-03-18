@@ -278,24 +278,27 @@ struct UserDataService {
     }
 
     static func getBackupsDirectory() -> URL? {
-        if let containerUrl = FileManager.default.url(
-            forUbiquityContainerIdentifier: nil
-        )?.appendingPathComponent("Documents/Backups") {
-            Log.info("containerUrl \(containerUrl)")
-            if !FileManager.default.fileExists(atPath: containerUrl.path, isDirectory: nil) {
-                do {
-                    Log.info("create directory")
-                    try FileManager.default.createDirectory(
-                        at: containerUrl, withIntermediateDirectories: true, attributes: nil
-                    )
-                } catch {
-                    Log.error("\(error.localizedDescription)")
-                }
+        do {
+            let documentsURL = try FileManager.default.url(
+                for: .documentDirectory,
+                in: .userDomainMask,
+                appropriateFor: nil,
+                create: true
+            )
+            let backupsURL = documentsURL.appendingPathComponent("Backups", isDirectory: true)
+            if !FileManager.default.fileExists(atPath: backupsURL.path, isDirectory: nil) {
+                try FileManager.default.createDirectory(
+                    at: backupsURL,
+                    withIntermediateDirectories: true,
+                    attributes: nil
+                )
             }
-            return containerUrl
+            Log.info("backupsDirectory (local): \(backupsURL)")
+            return backupsURL
+        } catch {
+            Log.error("backupsDirectory local error: \(error.localizedDescription)")
+            return nil
         }
-        Log.info("backupsDirectory: nil")
-        return nil
     }
 
     static func getFileName(_ deviceName: String, manual: Bool = false) -> String {

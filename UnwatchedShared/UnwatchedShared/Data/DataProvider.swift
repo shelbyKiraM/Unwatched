@@ -3,6 +3,7 @@
 //  Unwatched
 //
 
+import Foundation
 import SwiftData
 import OSLog
 
@@ -17,10 +18,10 @@ public final class DataProvider: Sendable {
 
     public let container: ModelContainer = {
         Log.info("getModelContainer")
-        var enableIcloudSync = UserDefaults.standard.bool(forKey: Const.enableIcloudSync)
-        #if os(tvOS)
-        enableIcloudSync = true
-        #endif
+        if UserDefaults.standard.bool(forKey: Const.enableIcloudSync) {
+            Log.info("getModelContainer: CloudKit disabled for this build, forcing local store")
+            UserDefaults.standard.set(false, forKey: Const.enableIcloudSync)
+        }
 
         #if DEBUG
         if CommandLine.arguments.contains("enable-testing") || ProcessInfo.processInfo.isXcodePreview {
@@ -28,13 +29,17 @@ public final class DataProvider: Sendable {
         }
         #endif
 
+        let storeURL = defaultStoreURL()
+
         let config = ModelConfiguration(
+            nil,
             schema: DataProvider.schema,
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: enableIcloudSync ? .private("iCloud.com.pentlandFirth.Unwatched") : .none
+            url: storeURL,
+            allowsSave: true,
+            cloudKitDatabase: .none
         )
 
-        Log.info("getModelContainer: config set")
+        Log.info("getModelContainer: config set \(storeURL.path())")
 
         do {
             do {
@@ -50,8 +55,10 @@ public final class DataProvider: Sendable {
             // workaround for migration (disable sync for initial launch)
             Log.info("getModelContainer: fallback")
             let config = ModelConfiguration(
+                nil,
                 schema: DataProvider.schema,
-                isStoredInMemoryOnly: false,
+                url: storeURL,
+                allowsSave: true,
                 cloudKitDatabase: .none
             )
             let container = try ModelContainer(
@@ -68,6 +75,28 @@ public final class DataProvider: Sendable {
         }
     }()
 
+    private static func defaultStoreURL() -> URL {
+        #if os(macOS)
+        let appSupportURL = URL.applicationSupportDirectory
+        #else
+        let appSupportURL = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first ?? URL.documentsDirectory
+        #endif
+
+        do {
+            try FileManager.default.createDirectory(
+                at: appSupportURL,
+                withIntermediateDirectories: true
+            )
+        } catch {
+            Log.error("getModelContainer: failed to create app support directory \(error)")
+        }
+
+        return appSupportURL.appending(path: "default.store")
+    }
+
     private static func migrationWorkaround(_ context: ModelContext) {
         // workaround: migration fails during willMigrate (https://developer.apple.com/forums/thread/775060)
         let dict = UnwatchedMigrationPlan.subPlaceVideosIn
@@ -82,7 +111,10 @@ public final class DataProvider: Sendable {
         let fileName = "imageCache.sqlite"
 
         #if os(tvOS)
-        let storeURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!.appendingPathComponent(fileName)
+        let storeURL = FileManager.default
+            .urls(for: .cachesDirectory, in: .userDomainMask)
+            .first!
+            .appendingPathComponent(fileName)
         #elseif os(macOS)
         let storeURL = URL.applicationSupportDirectory.appending(path: fileName)
         #else
@@ -90,8 +122,10 @@ public final class DataProvider: Sendable {
         #endif
 
         let config = ModelConfiguration(
+            nil,
             schema: schema,
             url: storeURL,
+            allowsSave: true,
             cloudKitDatabase: .none
         )
 
