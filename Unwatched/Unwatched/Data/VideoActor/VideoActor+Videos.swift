@@ -299,12 +299,12 @@ import UnwatchedShared
         let videoPlacementRaw = UserDefaults.standard.integer(forKey: Const.defaultVideoPlacement)
         let videoPlacement = VideoPlacement(rawValue: videoPlacementRaw) ?? .inbox
 
-        let shortsSettingRaw = NSUbiquitousKeyValueStore.default.longLong(forKey: Const.defaultShortsSetting)
+        let shortsSettingRaw = SyncedSettingsStore.longLong(forKey: Const.defaultShortsSetting)
         let shortsSetting = ShortsSetting(rawValue: Int(shortsSettingRaw)) ?? .show
         let showShorts = shortsSetting != .hide
 
-        let filterVideoTitleText = NSUbiquitousKeyValueStore.default.string(forKey: Const.filterVideoTitleText) ?? ""
-        let allowOnMatch = NSUbiquitousKeyValueStore.default.bool(forKey: Const.allowOnMatch)
+        let filterVideoTitleText = SyncedSettingsStore.string(forKey: Const.filterVideoTitleText) ?? ""
+        let allowOnMatch = SyncedSettingsStore.bool(forKey: Const.allowOnMatch)
 
         let info = DefaultVideoPlacement(
             videoPlacement: videoPlacement,

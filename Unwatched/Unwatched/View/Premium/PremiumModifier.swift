@@ -51,7 +51,7 @@ struct RequiresPremiumModifier: ViewModifier {
 
 @MainActor
 func guardPremium(onInteraction: (() -> Void)? = nil) -> Bool {
-    let premium = NSUbiquitousKeyValueStore.default.bool(
+    let premium = SyncedSettingsStore.bool(
         forKey: Const.unwatchedPremiumAcknowledged
     )
     if !premium {

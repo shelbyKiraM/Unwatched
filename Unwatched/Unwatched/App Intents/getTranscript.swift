@@ -24,7 +24,7 @@ struct GetTranscript: AppIntent {
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
         Signal.log("Shortcut.GetTranscript", throttle: .weekly)
 
-        let hasPremium = NSUbiquitousKeyValueStore.default.bool(forKey: Const.unwatchedPremiumAcknowledged)
+        let hasPremium = SyncedSettingsStore.bool(forKey: Const.unwatchedPremiumAcknowledged)
         guard hasPremium else {
             throw IntentError.requiresUnwatchedPremium
         }

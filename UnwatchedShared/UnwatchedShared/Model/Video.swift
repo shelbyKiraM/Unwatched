@@ -74,7 +74,7 @@ public final class Video: VideoData, CustomStringConvertible, Exportable {
     ) -> [T] {
         var result = [T]()
 
-        let settingOn = NSUbiquitousKeyValueStore.default.bool(forKey: Const.mergeSponsorBlockChapters)
+        let settingOn = SyncedSettingsStore.bool(forKey: Const.mergeSponsorBlockChapters)
         if (mergedChapters?.count ?? 0) > 1 && settingOn {
             result = mergedChapters ?? []
         } else if (chapters?.count ?? 0) > 1 {

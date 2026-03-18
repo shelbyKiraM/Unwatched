@@ -28,7 +28,7 @@ struct SetChapters: AppIntent {
     func perform() async throws -> some IntentResult {
         Signal.log("Shortcut.SetChapters", throttle: .weekly)
 
-        let hasPremium = NSUbiquitousKeyValueStore.default.bool(forKey: Const.unwatchedPremiumAcknowledged)
+        let hasPremium = SyncedSettingsStore.bool(forKey: Const.unwatchedPremiumAcknowledged)
         guard hasPremium else {
             throw IntentError.requiresUnwatchedPremium
         }

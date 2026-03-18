@@ -177,7 +177,7 @@ struct CleanupService {
         })
         let videos = try modelContext.fetch(descriptor)
 
-        let defaultShortSettingRaw = NSUbiquitousKeyValueStore.default.longLong(forKey: Const.defaultShortsSetting)
+        let defaultShortSettingRaw = SyncedSettingsStore.longLong(forKey: Const.defaultShortsSetting)
         let defaultShortSetting = ShortsSetting(rawValue: Int(defaultShortSettingRaw)) ?? .show
         let defaultHideShorts = defaultShortSetting == .hide
 
