@@ -42,6 +42,7 @@ class PlayerWebViewCoordinator: NSObject, WKNavigationDelegate, WKScriptMessageH
 
     @MainActor func webView(_ webView: WKWebView, didFinish navigation: WKNavigation) {
         let disableCaptions = UserDefaults.standard.bool(forKey: Const.disableCaptions)
+        let alwaysShowSubtitles = UserDefaults.standard.bool(forKey: Const.alwaysShowSubtitles)
         let minimalPlayerUI = UserDefaults.standard.bool(forKey: Const.minimalPlayerUI)
         let enableLogging = UserDefaults.standard.bool(forKey: Const.enableLogging)
         let originalAudio = UserDefaults.standard.bool(forKey: Const.originalAudio)
@@ -58,6 +59,7 @@ class PlayerWebViewCoordinator: NSObject, WKNavigationDelegate, WKScriptMessageH
             startAt: parent.player.getStartPosition(),
             requiresFetchingVideoData: parent.player.requiresFetchingVideoData(),
             disableCaptions: disableCaptions,
+            alwaysShowSubtitles: alwaysShowSubtitles,
             minimalPlayerUI: minimalPlayerUI,
             isNonEmbedding: parent.player.embeddingDisabled,
             hijackFullscreenButton: hijackFullscreenButton,
@@ -70,11 +72,22 @@ class PlayerWebViewCoordinator: NSObject, WKNavigationDelegate, WKScriptMessageH
         let script = PlayerWebView.initScript(options)
         Log.info("InitScriptOptions: \(options)")
         parent.evaluateJavaScript(webView, script)
+        parent.evaluateJavaScript(webView, SubtitleStyleSettingsStore.playerScript())
         withAnimation {
             parent.player.unstarted = true
         }
-        parent.player.isLoading = nil
         parent.player.handleAutoStart(webView.url)
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(8))
+            guard UserDefaults.standard.string(forKey: Const.playbackId) == playbackId,
+                  parent.player.isLoading != nil else {
+                return
+            }
+            PlayerWebView.repairVideo { [self] in
+                self.parent.player.repairReload(force: true)
+            }
+        }
     }
 }
 

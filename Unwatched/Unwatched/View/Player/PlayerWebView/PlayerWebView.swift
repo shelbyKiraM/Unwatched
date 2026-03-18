@@ -44,6 +44,15 @@ struct PlayerWebView: PlatformViewRepresentable {
         #endif
 
         let webView = WKWebView(frame: .zero, configuration: webViewConfig)
+        #if os(iOS) || os(visionOS)
+        if UserDefaults.standard.bool(forKey: Const.enableWebInspector) {
+            if #available(iOS 16.4, visionOS 1.0, *) {
+                if webView.responds(to: Selector(("setInspectable:"))) {
+                    webView.isInspectable = true
+                }
+            }
+        }
+        #endif
         webViewState.webView = webView
 
         player.isLoading = Date()

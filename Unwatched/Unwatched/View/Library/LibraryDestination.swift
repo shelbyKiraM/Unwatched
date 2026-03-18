@@ -37,6 +37,8 @@ extension View {
                         GeneralSettingsView()
                     case .settingsAppearance:
                         AppearanceSettingsView()
+                    case .subtitleStyle:
+                        SubtitleStyleSettingsView(store: SubtitleStyleSettingsStore())
                     case .settingsPlayback:
                         PlaybackSettingsView()
                     case .help:
@@ -69,6 +71,7 @@ enum LibraryDestination: Codable {
          settingsNotifications,
          settingsNewVideos,
          settingsAppearance,
+         subtitleStyle,
          settingsPlayback,
          importSubscriptions,
          debug,

@@ -6,6 +6,9 @@
 import SwiftUI
 import OSLog
 import UnwatchedShared
+#if os(iOS) || os(visionOS)
+import UIKit
+#endif
 
 struct AppearanceSettingsView: View {
     @AppStorage(Const.showTabBarLabels) var showTabBarLabels: Bool = true
@@ -19,103 +22,111 @@ struct AppearanceSettingsView: View {
     @AppStorage(Const.lightAppIcon) var lightAppIcon = false
 
     @Environment(\.originalColorScheme) var originalColorScheme
+    @Environment(\.openURL) var openURL
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                MyBackgroundColor()
+        ZStack {
+            MyBackgroundColor()
 
-                MyForm {
-                    MySection {
-                        Picker("browserDisplayMode", selection: $browserDisplayMode) {
-                            ForEach(BrowserDisplayMode.allCases, id: \.self) {
-                                Text($0.description)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                    }
-
-                    MySection {
-                        #if os(iOS)
-                        Toggle(isOn: $showTabBarLabels) {
-                            Text("showTabBarLabels")
-                        }
-                        Toggle(isOn: $hidePlayerPageIndicator) {
-                            Text("hidePlayerPageIndicator")
-                        }
-                        #endif
-                    }
-
-                    MySection {
-                        Picker("videoListFormat", selection: $videoListFormat) {
-                            ForEach(VideoListFormat.allCases, id: \.self) {
-                                Text($0.description)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                    }
-
-                    #if os(macOS)
-                    // workaround: app appearance seems to block interaction in a certain area
-                    Spacer()
-                        .frame(height: 10)
-                    #endif
-
-                    #if !os(visionOS)
-                    MySection(getAppearanceTitle(.light)) {
-                        AppAppearanceSelection(selection: $lightModeTheme)
-                            .environment(\.colorScheme, .light)
-                    }
-
-                    MySection(getAppearanceTitle(.dark)) {
-                        AppAppearanceSelection(selection: $darkModeTheme)
-                            .environment(\.colorScheme, .dark)
-                    }
-                    #endif
-
-                    MySection("appColor", showPremiumIndicator: true) {
-                        ForEach(ThemeColor.allCases, id: \.self) { theme in
-                            Button {
-                                themeColor = theme
-                                theme.setAppIcon()
-                            } label: {
-                                HStack {
-                                    Label {
-                                        Text(theme.description)
-                                            .foregroundStyle(Color.neutralAccentColor)
-                                    } icon: {
-                                        Image(systemName: theme == .blackWhite
-                                                ? "circle.righthalf.filled"
-                                                : "circle.fill")
-                                            .foregroundStyle(theme.color)
-                                            .background(Circle().fill(Color.backgroundColor).padding(3))
-                                    }
-                                    if theme == themeColor {
-                                        Spacer()
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            }
+            MyForm {
+                MySection {
+                    Picker("browserDisplayMode", selection: $browserDisplayMode) {
+                        ForEach(BrowserDisplayMode.allCases, id: \.self) {
+                            Text($0.description)
                         }
                     }
-                    .requiresPremium(themeColor == .defaultTheme)
+                    .pickerStyle(.menu)
+                }
 
-                    // New Subtitle Style section with NavigationLink
-                    MySection("Subtitle Style") {
-                        NavigationLink {
-                            SubtitleStyleSettingsView(store: SubtitleStyleSettingsStore())
-                        } label: {
-                            Label("Subtitle Style", systemImage: "captions.bubble.fill")
-                        }
-                    }
-
+                MySection {
                     #if os(iOS)
-                    lightAppIconToggle
+                    Toggle(isOn: $showTabBarLabels) {
+                        Text("showTabBarLabels")
+                    }
+                    Toggle(isOn: $hidePlayerPageIndicator) {
+                        Text("hidePlayerPageIndicator")
+                    }
                     #endif
                 }
-                .myNavigationTitle("appearance")
+
+                MySection {
+                    Picker("videoListFormat", selection: $videoListFormat) {
+                        ForEach(VideoListFormat.allCases, id: \.self) {
+                            Text($0.description)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+
+                #if os(macOS)
+                // workaround: app appearance seems to block interaction in a certain area
+                Spacer()
+                    .frame(height: 10)
+                #endif
+
+                #if !os(visionOS)
+                MySection(getAppearanceTitle(.light)) {
+                    AppAppearanceSelection(selection: $lightModeTheme)
+                        .environment(\.colorScheme, .light)
+                }
+
+                MySection(getAppearanceTitle(.dark)) {
+                    AppAppearanceSelection(selection: $darkModeTheme)
+                        .environment(\.colorScheme, .dark)
+                }
+                #endif
+
+                MySection("appColor", showPremiumIndicator: true) {
+                    ForEach(ThemeColor.allCases, id: \.self) { theme in
+                        Button {
+                            themeColor = theme
+                            theme.setAppIcon()
+                        } label: {
+                            HStack {
+                                Label {
+                                    Text(theme.description)
+                                        .foregroundStyle(Color.neutralAccentColor)
+                                } icon: {
+                                    Image(systemName: theme == .blackWhite
+                                            ? "circle.righthalf.filled"
+                                            : "circle.fill")
+                                        .foregroundStyle(theme.color)
+                                        .background(Circle().fill(Color.backgroundColor).padding(3))
+                                }
+                                if theme == themeColor {
+                                    Spacer()
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+                .requiresPremium(themeColor == .defaultTheme)
+
+                MySection(
+                    "Subtitle Style",
+                    footer: "To be able to paste style scripts from elsewhere, please set \"Paste from Other Apps\" to Allow so it stops asking all the dang time."
+                ) {
+                    NavigationLink(value: LibraryDestination.subtitleStyle) {
+                        Label("Subtitle Style", systemImage: "captions.bubble.fill")
+                    }
+
+                    #if os(iOS) || os(visionOS)
+                    Button("Open App Settings") {
+                        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else {
+                            return
+                        }
+                        openURL(settingsURL)
+                    }
+                    #endif
+                }
+
+                #if os(iOS)
+                lightAppIconToggle
+                #endif
             }
+            .myNavigationTitle("appearance")
         }
     }
 
@@ -149,5 +160,7 @@ struct AppearanceSettingsView: View {
 }
 
 #Preview {
-    AppearanceSettingsView()
+    NavigationStack {
+        AppearanceSettingsView()
+    }
 }
