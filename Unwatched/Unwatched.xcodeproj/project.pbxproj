@@ -752,6 +752,8 @@
 		CDE87A492E2567DA00E35B41 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE87A482E2567DA00E35B41 /* CircularProgressView.swift */; };
 		CDE87A4A2E2567DA00E35B41 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE87A482E2567DA00E35B41 /* CircularProgressView.swift */; };
 		CDEB17722C5CCB5800E6FE66 /* VideoCrawlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDEB17712C5CCB4B00E6FE66 /* VideoCrawlerTests.swift */; };
+		CED5DCBA2F6A3E5700D453BB /* SubtitleStyleSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED5DCB92F6A3E5700D453BB /* SubtitleStyleSettingsView.swift */; };
+		CED5DCBB2F6A3E5700D453BB /* SubtitleStyleSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED5DCB92F6A3E5700D453BB /* SubtitleStyleSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1222,6 +1224,7 @@
 		CDA07A382C601F510009BFEC /* DataSpeedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSpeedTests.swift; sourceTree = "<group>"; };
 		CDE87A482E2567DA00E35B41 /* CircularProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
 		CDEB17712C5CCB4B00E6FE66 /* VideoCrawlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCrawlerTests.swift; sourceTree = "<group>"; };
+		CED5DCB92F6A3E5700D453BB /* SubtitleStyleSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubtitleStyleSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -1712,6 +1715,7 @@
 			isa = PBXGroup;
 			children = (
 				88373C142C8B37D600ACBB3B /* AppearanceSelection */,
+				CED5DCB92F6A3E5700D453BB /* SubtitleStyleSettingsView.swift */,
 				8868181C2D7756E900E06A0D /* ExportSubscriptionsShareLink.swift */,
 				88C572322B53C8BD002FF07E /* SettingsView.swift */,
 				888F74A62BA1FAC000B94822 /* NotificationSettingsView.swift */,
@@ -2539,6 +2543,7 @@
 				88C33B222EC9E0FC00E7685C /* LibraryView.swift in Sources */,
 				88373C132C8B203400ACBB3B /* UnwatchedMiniature.swift in Sources */,
 				889AF92F2C50ECEE001CEDE6 /* CustomSettingsButton.swift in Sources */,
+				CED5DCBA2F6A3E5700D453BB /* SubtitleStyleSettingsView.swift in Sources */,
 				889AF9302C50ECEE001CEDE6 /* ChapterTimeRemaining.swift in Sources */,
 				88358A7B2C64EBAC00AF71F8 /* UNNotificationAttachment.swift in Sources */,
 				889AF9312C50ECEE001CEDE6 /* VideoPlayer.swift in Sources */,
@@ -2815,6 +2820,7 @@
 				88C5F3F02CCCF50500DA802F /* UserTipsView.swift in Sources */,
 				889924712C4824EE001185A6 /* InteractiveSubscriptionTitle.swift in Sources */,
 				88F7E24C2DE59962001E1F3F /* DebugLoggerView.swift in Sources */,
+				CED5DCBB2F6A3E5700D453BB /* SubtitleStyleSettingsView.swift in Sources */,
 				CD6364112C6DD9DF00C5DD43 /* EmptyEntry.swift in Sources */,
 				883CA8192B5BB2FB00028D52 /* ChapterMiniControlView.swift in Sources */,
 				889924672C47F4A4001185A6 /* PlayerControls.swift in Sources */,
