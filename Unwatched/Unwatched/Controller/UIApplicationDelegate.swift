@@ -23,11 +23,17 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        Log.info("didFinishLaunching: start")
         Signal.setup()
-        workaroundInitialWebViewDelay()
+        Log.info("didFinishLaunching: signal setup complete")
         notificationCenter.delegate = self
         setupNotificationCategories(notificationCenter)
-        SetupView.onLaunch()
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
+            self.workaroundInitialWebViewDelay()
+            Log.info("didFinishLaunching: warmed web view")
+        }
+        Log.info("didFinishLaunching: finished")
         return true
     }
 

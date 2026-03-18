@@ -29,73 +29,79 @@ struct DeepLinkHandler: ViewModifier {
     }
 
     func handleDeepLink(url: URL) {
-        if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-           let queryItems = components.queryItems,
-           queryItems.first(where: { $0.name == "disablePip" })?.value == "true" {
-            Task {
-                try? await Task.sleep(for: .seconds(1))
-                player.setPip(false)
-            }
-        }
-
+        handleDisablePip(url: url)
         guard let host = url.host else { return }
+
         switch host {
         case "shortcut-success":
             break
         case "shortcut-error":
-            guard
-                let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                let queryItems = components.queryItems,
-                let errorMessage = queryItems.first(where: { $0.name == "errorMessage" })?.value
-            else { return }
-            self.shortcutErrorMessage = errorMessage
-            self.showShortcutErrorAlert = true
+            handleShortcutError(url: url)
         case "play":
-            // unwatched://play?url=https://www.youtube.com/watch?v=O_0Wn73AnC8
-            guard
-                let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                let queryItems = components.queryItems
-            else { return }
-
-            if queryItems.first(where: { $0.name == "source" })?.value == "safari_extension" {
-                guard guardPremium() else { return }
-            }
-
-            guard
-                let youtubeUrlString = queryItems.first(where: { $0.name == "url" })?.value,
-                let youtubeUrl = URL(string: youtubeUrlString)
-            else {
-                Log.error("No youtube URL found in deep link: \(url)")
-                return
-            }
-            let userInfo: [AnyHashable: Any] = ["youtubeUrl": youtubeUrl]
-            NotificationCenter.default.post(name: .watchInUnwatched, object: nil, userInfo: userInfo)
+            handlePlay(url: url)
         case "queue":
-            // unwatched://queue?url=https://www.youtube.com/watch?v=O_0Wn73AnC8
-            // unwatched://queue?url=https://www.youtube.com/watch?v=O_0Wn73AnC8&next=true
-            // unwatched://queue?url=https://www.youtube.com/watch?v=O_0Wn73AnC8&x-success=myapp://
-            guard
-                let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                let queryItems = components.queryItems
-            else { return }
-
-            guard
-                let youtubeUrlString = queryItems.first(where: { $0.name == "url" })?.value,
-                let youtubeUrl = URL(string: youtubeUrlString)
-            else {
-                Log.error("No youtube URL found in deep link: \(url)")
-                return
-            }
-            let isNext = queryItems.first(where: { $0.name == "next" })?.value == "true"
-            let queueUserInfo: [AnyHashable: Any] = ["youtubeUrl": youtubeUrl, "next": isNext]
-            NotificationCenter.default.post(name: .queueInUnwatched, object: nil, userInfo: queueUserInfo)
-            if let xSuccess = queryItems.first(where: { $0.name == "x-success" })?.value,
-               let xSuccessURL = URL(string: xSuccess) {
-                UrlService.open(xSuccessURL)
-            }
+            handleQueue(url: url)
         default:
             break
         }
+    }
+
+    func handleDisablePip(url: URL) {
+        guard queryValue(named: "disablePip", in: url) == "true" else {
+            return
+        }
+        Task {
+            try? await Task.sleep(for: .seconds(1))
+            player.setPip(false)
+        }
+    }
+
+    func handleShortcutError(url: URL) {
+        guard let errorMessage = queryValue(named: "errorMessage", in: url) else {
+            return
+        }
+        shortcutErrorMessage = errorMessage
+        showShortcutErrorAlert = true
+    }
+
+    func handlePlay(url: URL) {
+        if queryValue(named: "source", in: url) == "safari_extension" {
+            guard guardPremium() else { return }
+        }
+
+        guard let youtubeUrl = youtubeUrl(from: url) else { return }
+        let userInfo: [AnyHashable: Any] = ["youtubeUrl": youtubeUrl]
+        NotificationCenter.default.post(name: .watchInUnwatched, object: nil, userInfo: userInfo)
+    }
+
+    func handleQueue(url: URL) {
+        guard let youtubeUrl = youtubeUrl(from: url) else { return }
+
+        let isNext = queryValue(named: "next", in: url) == "true"
+        let queueUserInfo: [AnyHashable: Any] = ["youtubeUrl": youtubeUrl, "next": isNext]
+        NotificationCenter.default.post(name: .queueInUnwatched, object: nil, userInfo: queueUserInfo)
+
+        guard let xSuccess = queryValue(named: "x-success", in: url),
+              let xSuccessURL = URL(string: xSuccess) else {
+            return
+        }
+        UrlService.open(xSuccessURL)
+    }
+
+    func youtubeUrl(from url: URL) -> URL? {
+        guard let youtubeUrlString = queryValue(named: "url", in: url),
+              let youtubeUrl = URL(string: youtubeUrlString) else {
+            Log.error("No youtube URL found in deep link: \(url)")
+            return nil
+        }
+        return youtubeUrl
+    }
+
+    func queryValue(named name: String, in url: URL) -> String? {
+        URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            .queryItems?
+            .first(where: { $0.name == name })?
+            .value
     }
 }
 

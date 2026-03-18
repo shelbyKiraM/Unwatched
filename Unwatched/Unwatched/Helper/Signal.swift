@@ -9,21 +9,28 @@ import SwiftData
 import UnwatchedShared
 
 struct Signal {
+    private static var isConfigured = false
+
     static func setup() {
         #if os(iOS)
         if !(Const.analytics.bool ?? true) { return }
-        guard let appID = Bundle.main.object(forInfoDictionaryKey: "TelemetryDeckAppID") as? String, !appID.isEmpty else {
+        guard
+            let appID = Bundle.main.object(forInfoDictionaryKey: "TelemetryDeckAppID") as? String,
+            !appID.isEmpty
+        else {
             return
         }
         let config = TelemetryDeck.Config(appID: appID)
         config.defaultSignalPrefix = "Unwatched."
         config.defaultParameterPrefix = "Unwatched."
         TelemetryDeck.initialize(config: config)
+        isConfigured = true
         #endif
     }
 
     static func signalBool(_ signalName: String, value: Bool) {
         #if os(iOS)
+        guard isConfigured else { return }
         TelemetryDeck.signal(signalName, parameters: ["value": value ? "On" : "Off"])
         #endif
     }
@@ -35,14 +42,14 @@ struct Signal {
                 return
             }
         }
-        if !(Const.analytics.bool ?? true) { return }
+        if !(Const.analytics.bool ?? true) || !isConfigured { return }
         Log.info("Signal: \(signalName)")
         TelemetryDeck.signal(signalName, parameters: parameters)
         #endif
     }
 
     static func error(_ id: String) {
-        if !(Const.analytics.bool ?? true) { return }
+        if !(Const.analytics.bool ?? true) || !isConfigured { return }
         TelemetryDeck.errorOccurred(id: id)
     }
 }

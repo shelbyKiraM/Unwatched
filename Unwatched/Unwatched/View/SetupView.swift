@@ -25,6 +25,7 @@ struct SetupView: View {
     @State var sheetPos = SheetPositionReader.shared
     @State var navManager = NavigationManager.shared
     @State var undoManager = TinyUndoManager.shared
+    @State private var didRunLaunchSetup = false
 
     var body: some View {
         ContentView()
@@ -85,6 +86,14 @@ struct SetupView: View {
             #endif
             .onAppear {
                 navManager.openWindow = openWindow
+                guard !didRunLaunchSetup else { return }
+                didRunLaunchSetup = true
+                Log.info("SetupView.onAppear: scheduling launch setup")
+                Task { @MainActor in
+                    await Task.yield()
+                    SetupView.onLaunch()
+                    Log.info("SetupView.onAppear: launch setup complete")
+                }
             }
     }
 

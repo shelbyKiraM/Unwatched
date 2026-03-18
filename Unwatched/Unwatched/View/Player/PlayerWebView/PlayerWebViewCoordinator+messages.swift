@@ -9,6 +9,13 @@ import OSLog
 import UnwatchedShared
 
 extension PlayerWebViewCoordinator {
+    @MainActor
+    func markPlayerReady() {
+        if parent.player.isLoading != nil {
+            parent.player.isLoading = nil
+        }
+    }
+
     // swiftlint:disable:next cyclomatic_complexity function_body_length
     func handleJsMessages(_ topic: String, _ payload: String?) {
         switch topic {
@@ -195,6 +202,7 @@ extension PlayerWebViewCoordinator {
             Log.warning("Aspect ratio couldn't be parsed: \(payload ?? "-")")
             return
         }
+        markPlayerReady()
         parent.player.handleAspectRatio(aspectRatio)
     }
 
@@ -254,6 +262,7 @@ extension PlayerWebViewCoordinator {
     }
 
     func handlePlay() {
+        markPlayerReady()
         parent.player.previousState.isPlaying = true
         updateUnstarted()
         parent.player.play()
@@ -325,6 +334,7 @@ extension PlayerWebViewCoordinator {
             Log.info("handleDuration: not updating")
             return
         }
+        markPlayerReady()
 
         if let video = parent.player.video {
             VideoService.updateDuration(video, duration: duration)
@@ -364,6 +374,7 @@ extension PlayerWebViewCoordinator {
         guard let timeString, let time = Double(timeString) else {
             return
         }
+        markPlayerReady()
         if parent.player.isPlaying {
             parent.player.monitorChapters(time: time)
         }

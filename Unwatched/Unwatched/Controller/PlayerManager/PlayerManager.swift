@@ -42,7 +42,7 @@ import UnwatchedShared
     var videoEnded: Bool = false
     var shouldStop: Bool = false
     var unstarted: Bool = true
-    var isLoading: Date? = Date()
+    var isLoading: Date?
     var deferVideoDate: Date?
     private(set) var aspectRatio: Double?
 
@@ -77,7 +77,7 @@ import UnwatchedShared
             loadedPlayer.initPlaybackSpeed()
             return loadedPlayer
         } else {
-            Log.warning("player not found")
+            // No saved player found — starting fresh
             return PlayerManager()
         }
     }
