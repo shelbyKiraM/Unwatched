@@ -5,6 +5,7 @@
 
 import SwiftUI
 import SwiftData
+import OSLog
 import UnwatchedShared
 
 struct ContentView: View {
@@ -61,12 +62,39 @@ struct ContentView: View {
                 disableSheet: bigScreen,
                 proxy: proxy
             )
+            .onAppear {
+                logLayoutState(proxy: proxy, landscapeFullscreen: landscapeFullscreen, reason: "appear")
+            }
+            .onChange(of: proxy.size, initial: true) {
+                logLayoutState(proxy: proxy, landscapeFullscreen: landscapeFullscreen, reason: "sizeChange")
+            }
+            .onChange(of: navManager.showMenu, initial: true) {
+                logLayoutState(proxy: proxy, landscapeFullscreen: landscapeFullscreen, reason: "showMenu")
+            }
+            .onChange(of: player.video?.youtubeId, initial: true) {
+                logLayoutState(proxy: proxy, landscapeFullscreen: landscapeFullscreen, reason: "video")
+            }
+            .onChange(of: player.embeddingDisabled, initial: true) {
+                logLayoutState(proxy: proxy, landscapeFullscreen: landscapeFullscreen, reason: "embeddingDisabled")
+            }
         }
         .setColorScheme()
         .onSizeChange { newSize in
             sheetPos.sheetHeight = newSize.height
         }
         .ignoresSafeArea(.keyboard)
+    }
+
+    func logLayoutState(proxy: GeometryProxy, landscapeFullscreen: Bool, reason: String) {
+        Log.info(
+            """
+            ContentView[\(reason)]: size=\(proxy.size.width)x\(proxy.size.height) \
+            bigScreen=\(bigScreen) landscapeFullscreen=\(landscapeFullscreen) \
+            showMenu=\(navManager.showMenu) tab=\(String(describing: navManager.tab)) \
+            video=\(player.video?.youtubeId ?? "nil") embeddingDisabled=\(player.embeddingDisabled) \
+            swipedBelow=\(sheetPos.swipedBelow)
+            """
+        )
     }
 }
 

@@ -88,6 +88,24 @@ struct VideoPlayer: View {
                 player.video?.isNew = false
             }
         }
+        .onAppear {
+            logState("appear")
+        }
+        .onChange(of: landscapeFullscreen, initial: true) {
+            logState("landscapeFullscreen")
+        }
+        .onChange(of: player.video?.youtubeId, initial: true) {
+            logState("video")
+        }
+        .onChange(of: player.embeddingDisabled, initial: true) {
+            logState("embeddingDisabled")
+        }
+        .onChange(of: player.isLoading != nil, initial: true) {
+            logState("isLoading")
+        }
+        .onChange(of: navManager.showMenu, initial: true) {
+            logState("showMenu")
+        }
         .ignoresSafeArea(edges: landscapeFullscreen ? (player.embeddingDisabled ? .all : .vertical) : [])
         .onChange(of: landscapeFullscreen) {
             handleLandscapeFullscreenChange(landscapeFullscreen)
@@ -142,6 +160,18 @@ struct VideoPlayer: View {
             fullscreenControlsSetting != .disabled
                 || Device.isMac && (!navManager.isMacosFullscreen || !horizontalLayout)
                 || !Device.isMac && !horizontalLayout
+        )
+    }
+
+    func logState(_ reason: String) {
+        Log.info(
+            """
+            VideoPlayer[\(reason)]: landscapeFullscreen=\(landscapeFullscreen) compactSize=\(compactSize) \
+            horizontalLayout=\(horizontalLayout) hideControls=\(hideControls) \
+            video=\(player.video?.youtubeId ?? "nil") isLoading=\(player.isLoading != nil) \
+            embeddingDisabled=\(player.embeddingDisabled) showMenu=\(navManager.showMenu) \
+            swipedBelow=\(sheetPos.swipedBelow) fakePip=\(isFakePip)
+            """
         )
     }
 }

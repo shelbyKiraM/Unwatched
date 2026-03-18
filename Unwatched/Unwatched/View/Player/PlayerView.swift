@@ -108,6 +108,18 @@ struct PlayerView: View {
             }
         }
         .dateSelectorSheet()
+        .onAppear {
+            logSurfaceState("appear")
+        }
+        .onChange(of: surfaceMode, initial: true) {
+            logSurfaceState("surface")
+        }
+        .onChange(of: hideMiniPlayer, initial: true) {
+            logSurfaceState("hideMiniPlayer")
+        }
+        .onChange(of: landscapeFullscreen, initial: true) {
+            logSurfaceState("landscapeFullscreen")
+        }
         #if !os(visionOS)
         .persistentSystemOverlays(
             landscapeFullscreen || controlsHidden
@@ -146,6 +158,13 @@ struct PlayerView: View {
 
     var showEmbeddedThumbnail: Bool {
         !hideMiniPlayer && player.unstarted
+    }
+
+    var surfaceMode: String {
+        if player.video == nil {
+            return compactSize ? "emptyCompact" : "emptyView"
+        }
+        return player.embeddingDisabled ? "website" : "embedded"
     }
 
     @MainActor
@@ -253,6 +272,18 @@ struct PlayerView: View {
                 overlayVM.show(.previous)
             }
         }
+    }
+
+    func logSurfaceState(_ reason: String) {
+        Log.info(
+            """
+            PlayerView[\(reason)]: surfaceMode=\(surfaceMode) landscapeFullscreen=\(landscapeFullscreen) \
+            compactSize=\(compactSize) hideMiniPlayer=\(hideMiniPlayer) \
+            showFullscreenControls=\(showFullscreenControls) controlsHidden=\(controlsHidden) \
+            unstarted=\(player.unstarted) isLoading=\(player.isLoading != nil) \
+            video=\(player.video?.youtubeId ?? "nil")
+            """
+        )
     }
 
     static let miniPlayerHorizontalPadding: CGFloat = 15
