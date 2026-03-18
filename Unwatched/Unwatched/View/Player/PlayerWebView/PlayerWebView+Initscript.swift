@@ -16,6 +16,7 @@ extension PlayerWebView {
         let startAt: Double
         let requiresFetchingVideoData: Bool?
         let disableCaptions: Bool
+        let alwaysShowSubtitles: Bool
         let minimalPlayerUI: Bool
         let isNonEmbedding: Bool
         let hijackFullscreenButton: Bool
@@ -32,6 +33,7 @@ extension PlayerWebView {
         var playbackRate = \(options.playbackSpeed);
         var startAtTime = \(options.startAt);
         var disableCaptions = \(options.disableCaptions);
+        const alwaysShowSubtitles = \(options.alwaysShowSubtitles);
         var minimalPlayerUI = \(options.minimalPlayerUI);
         const interceptKeys = \(PlayerShortcut.interceptKeysJS);
         const isNonEmbedding = \(options.isNonEmbedding);
@@ -60,6 +62,21 @@ extension PlayerWebView {
                 sendMessage("error", error.message);
             } else {
                 sendMessage("error", error);
+            }
+        }
+
+        window.upsertUnwatchedStyle = function(styleId, cssText) {
+            if (!styleId || !cssText) {
+                return;
+            }
+            let style = document.getElementById(styleId);
+            if (!style) {
+                style = document.createElement('style');
+                style.id = styleId;
+                document.head.appendChild(style);
+            }
+            if (style.textContent !== cssText) {
+                style.textContent = cssText;
             }
         }
 
@@ -290,6 +307,99 @@ extension PlayerWebView {
             setInterval(checkVideoState, 3000);
         }
 
+        function findSubtitleButton() {
+            return document.querySelector('.ytp-subtitles-button')
+                || document.querySelector('.ytmClosedCaptioningButtonButton')
+                || document.querySelector('button[aria-label*="Subtitles/closed captions"]');
+        }
+
+        function subtitlesAreEnabled(button) {
+            const subtitleButton = button || findSubtitleButton();
+            if (!subtitleButton) {
+                return false;
+            }
+            return subtitleButton.getAttribute('aria-pressed') === 'true';
+        }
+
+        function subtitleButtonIsReady(button) {
+            const subtitleButton = button || findSubtitleButton();
+            if (!subtitleButton) {
+                return false;
+            }
+            const ariaDisabled = subtitleButton.getAttribute('aria-disabled') === 'true';
+            const isDisabled = subtitleButton.disabled || subtitleButton.classList?.contains('ytp-button-disabled');
+            const title = (
+                subtitleButton.getAttribute('aria-label')
+                || subtitleButton.getAttribute('data-title-no-tooltip')
+                || subtitleButton.getAttribute('title')
+                || ''
+            ).toLowerCase();
+            return !ariaDisabled && !isDisabled && !title.includes('unavailable');
+        }
+
+        function captionsLookAvailable() {
+            try {
+                const player = document.getElementById("movie_player");
+                return !!getCaptionTrack(player?.getAudioTrack?.());
+            } catch {
+                return false;
+            }
+        }
+
+        function ensureSubtitlesEnabled(retryIndex = 0) {
+            if (!alwaysShowSubtitles || disableCaptions) {
+                return;
+            }
+
+            if (window.unwatchedAttemptedSubtitleEnable) {
+                return;
+            }
+
+            const subtitleButton = findSubtitleButton();
+            if (!subtitleButton) {
+                if (retryIndex < 5) {
+                    setTimeout(() => ensureSubtitlesEnabled(retryIndex + 1), 350 * (retryIndex + 1));
+                }
+                return;
+            }
+
+            if (subtitlesAreEnabled(subtitleButton)) {
+                window.unwatchedAttemptedSubtitleEnable = true;
+                return;
+            }
+
+            if (!subtitleButtonIsReady(subtitleButton)
+                || !captionsLookAvailable()
+                || !video
+                || video.paused
+                || video.readyState < 2) {
+                if (retryIndex < 5) {
+                    setTimeout(() => ensureSubtitlesEnabled(retryIndex + 1), 350 * (retryIndex + 1));
+                }
+                return;
+            }
+
+            const subtitleEnableAttempts = window.unwatchedSubtitleEnableAttempts || 0;
+            if (subtitleEnableAttempts >= 2) {
+                window.unwatchedAttemptedSubtitleEnable = true;
+                return;
+            }
+
+            window.unwatchedSubtitleEnableAttempts = subtitleEnableAttempts + 1;
+            subtitleButton.click();
+            setTimeout(() => {
+                if (subtitlesAreEnabled()) {
+                    window.unwatchedAttemptedSubtitleEnable = true;
+                    return;
+                }
+                if ((window.unwatchedSubtitleEnableAttempts || 0) >= 2) {
+                    window.unwatchedAttemptedSubtitleEnable = true;
+                    return;
+                }
+                ensureSubtitlesEnabled(0);
+            }, 900);
+        }
+
         function addVideoListeners() {
             video.addEventListener('seeked', () => {
                 debouncedHideOverlay(1000);
@@ -301,6 +411,7 @@ extension PlayerWebView {
         document.addEventListener('play', (e) => {
             if (e.target.tagName === 'VIDEO') {
                 startTimer();
+                ensureSubtitlesEnabled();
                 sendMessage("play");
             }
             hideOverlay();
@@ -354,6 +465,7 @@ extension PlayerWebView {
                 sendMessage("duration", duration.toString());
                 e.target.currentTime = startAtTime;
                 handleAudioTrack();
+                ensureSubtitlesEnabled();
                 hideOverlay();
 
                 // setting video time so early breaks the overlay reference
@@ -490,6 +602,7 @@ extension PlayerWebView {
         // Pip
         document.addEventListener("canplay", (e) => {
             if (e.target.tagName === 'VIDEO') {
+                ensureSubtitlesEnabled();
                 sendMessage("pip", "canplay");
 
                 e.target.addEventListener('webkitpresentationmodechanged', (e) => {

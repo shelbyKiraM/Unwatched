@@ -121,10 +121,20 @@ extension PlayerWebView {
 
     func getEnterPipScript() -> String {
         """
-        if (document.pictureInPictureEnabled && !document.pictureInPictureElement) {
+        if (document.pictureInPictureEnabled
+            && typeof video.requestPictureInPicture === 'function'
+            && !document.pictureInPictureElement) {
             video.requestPictureInPicture().catch(error => {
                 sendMessage('pip', error);
             });
+        } else if (typeof video.webkitSupportsPresentationMode === 'function'
+            && video.webkitSupportsPresentationMode('picture-in-picture')
+            && typeof video.webkitSetPresentationMode === 'function') {
+            try {
+                video.webkitSetPresentationMode('picture-in-picture');
+            } catch (error) {
+                sendMessage('pip', error);
+            }
         } else {
             sendMessage('pip', "not even trying")
         }
@@ -132,7 +142,14 @@ extension PlayerWebView {
     }
 
     func getExitPipScript() -> String {
-        "document.exitPictureInPicture();"
+        """
+        if (document.pictureInPictureElement && typeof document.exitPictureInPicture === 'function') {
+            document.exitPictureInPicture();
+        } else if (typeof video.webkitSetPresentationMode === 'function'
+            && video.webkitPresentationMode === 'picture-in-picture') {
+            video.webkitSetPresentationMode('inline');
+        }
+        """
     }
 
     // Sometimes on iOS 26, the player is black and unresponsive

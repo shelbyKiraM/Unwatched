@@ -48,6 +48,7 @@ extension Const {
         Const.temporarySlowDown: Const.speedMin,
         Const.playVideoFullscreen: false,
         Const.disableCaptions: false,
+        Const.alwaysShowSubtitles: false,
         Const.minimalPlayerUI: false,
 
         Const.swipeGestureUp: true,
@@ -79,6 +80,7 @@ extension Const {
         Const.autoDeleteWatchedVideos: 0,
         Const.autoDeleteOrphanedVideos: 0,
         Const.autoDeleteInboxVideosLimit: 0,
+        Const.enableWebInspector: false,
 
         // Premium
         Const.unwatchedPremiumAcknowledged: false,

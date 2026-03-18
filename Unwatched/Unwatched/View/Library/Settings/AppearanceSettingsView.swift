@@ -6,6 +6,9 @@
 import SwiftUI
 import OSLog
 import UnwatchedShared
+#if os(iOS) || os(visionOS)
+import UIKit
+#endif
 
 struct AppearanceSettingsView: View {
     @AppStorage(Const.showTabBarLabels) var showTabBarLabels: Bool = true
@@ -19,6 +22,7 @@ struct AppearanceSettingsView: View {
     @AppStorage(Const.lightAppIcon) var lightAppIcon = false
 
     @Environment(\.originalColorScheme) var originalColorScheme
+    @Environment(\.openURL) var openURL
 
     var body: some View {
         ZStack {
@@ -100,6 +104,24 @@ struct AppearanceSettingsView: View {
                 }
                 .requiresPremium(themeColor == .defaultTheme)
 
+                MySection(
+                    "Subtitle Style",
+                    footer: "To be able to paste style scripts from elsewhere, please set \"Paste from Other Apps\" to Allow so it stops asking all the dang time."
+                ) {
+                    NavigationLink(value: LibraryDestination.subtitleStyle) {
+                        Label("Subtitle Style", systemImage: "captions.bubble.fill")
+                    }
+
+                    #if os(iOS) || os(visionOS)
+                    Button("Open App Settings") {
+                        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else {
+                            return
+                        }
+                        openURL(settingsURL)
+                    }
+                    #endif
+                }
+
                 #if os(iOS)
                 lightAppIconToggle
                 #endif
@@ -138,5 +160,7 @@ struct AppearanceSettingsView: View {
 }
 
 #Preview {
-    AppearanceSettingsView()
+    NavigationStack {
+        AppearanceSettingsView()
+    }
 }

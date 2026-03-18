@@ -12,7 +12,10 @@ struct Signal {
     static func setup() {
         #if os(iOS)
         if !(Const.analytics.bool ?? true) { return }
-        let config = TelemetryDeck.Config(appID: Credentials.telemetry)
+        guard let appID = Bundle.main.object(forInfoDictionaryKey: "TelemetryDeckAppID") as? String, !appID.isEmpty else {
+            return
+        }
+        let config = TelemetryDeck.Config(appID: appID)
         config.defaultSignalPrefix = "Unwatched."
         config.defaultParameterPrefix = "Unwatched."
         TelemetryDeck.initialize(config: config)

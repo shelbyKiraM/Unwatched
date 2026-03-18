@@ -18,6 +18,7 @@ public struct Const {
     public static let allowOnMatch = "allowOnMatch"
     public static let nowPlayingVideo = "nowPlayingVideo"
     public static let enableIcloudSync = "enableIcloudSync"
+    public static let enableWebInspector = "enableWebInspector"
     public static let requiresDurationFetch = "requiresDurationFetch"
 
     public static let inboxVideoAddedCategory = "inboxVideoAddedCategory"
@@ -277,6 +278,7 @@ public struct Const {
     public static let useNoCookieUrl = "useNoCookieUrl"
     public static let enableQueueContextMenu = "enableQueueContextMenu"
     public static let disableCaptions = "disableCaptions"
+    public static let alwaysShowSubtitles = "alwaysShowSubtitles"
     public static let minimalPlayerUI = "minimalPlayerUI"
     public static let swipeGestureUp = "swipeGestureUp"
     public static let swipeGestureDown = "swipeGestureDown"
@@ -343,5 +345,69 @@ public extension Const {
             return true
         }
         return false
+    }
+}
+
+public enum SyncedSettingsStore {
+    private static let defaults = UserDefaults.standard
+
+    public static let isLocalOnly = true
+
+    public static func object(forKey key: String) -> Any? {
+        defaults.object(forKey: key)
+    }
+
+    public static func set(_ object: Any?, forKey key: String) {
+        guard let object else {
+            defaults.removeObject(forKey: key)
+            return
+        }
+        defaults.set(object, forKey: key)
+    }
+
+    public static func removeObject(forKey key: String) {
+        defaults.removeObject(forKey: key)
+    }
+
+    public static func string(forKey key: String) -> String? {
+        defaults.string(forKey: key)
+    }
+
+    public static func array(forKey key: String) -> [Any]? {
+        defaults.array(forKey: key)
+    }
+
+    public static func dictionary(forKey key: String) -> [String: Any]? {
+        defaults.dictionary(forKey: key)
+    }
+
+    public static func data(forKey key: String) -> Data? {
+        defaults.data(forKey: key)
+    }
+
+    public static func date(forKey key: String) -> Date? {
+        defaults.object(forKey: key) as? Date
+    }
+
+    public static func bool(forKey key: String) -> Bool {
+        defaults.bool(forKey: key)
+    }
+
+    public static func double(forKey key: String) -> Double {
+        defaults.double(forKey: key)
+    }
+
+    public static func longLong(forKey key: String) -> Int64 {
+        switch defaults.object(forKey: key) {
+        case let number as NSNumber:
+            return number.int64Value
+        case let string as NSString:
+            return string.longLongValue
+        default:
+            return 0
+        }
+    }
+
+    public static func synchronize() {
     }
 }
